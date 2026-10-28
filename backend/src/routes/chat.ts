@@ -76,13 +76,15 @@ export function chatRouter(config: Config): Router {
       ];
 
       const completion = await groq.chat.completions.create({
-        model: 'llama3-8b-8192',
+        model: 'qwen/qwen3.8-27b',
         messages,
         max_tokens: 150,   // keeps replies short for speech bubbles
         temperature: 0.7,
       });
 
-      const reply = completion.choices[0]?.message?.content?.trim() ?? "I'm sorry, I couldn't understand that.";
+      const raw = completion.choices[0]?.message?.content ?? "I'm sorry, I couldn't understand that.";
+      // Strip any <think>…</think> reasoning blocks that some models include
+      const reply = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim() || "I'm sorry, I couldn't understand that.";
 
       res.json({ reply });
     }),
