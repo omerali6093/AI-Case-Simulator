@@ -981,3 +981,48 @@ input[type=range] { width: 100%; accent-color: #5eead4; }
   font-style: italic;
   opacity: .9;
 }
+
+/* ─── AI mode badge (HUD) ─────────────────────────────────────────────────── */
+
+.mode-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font: 700 11px/1 var(--font-display);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.mode-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* Live — green pulse */
+.mode-live {
+  background: rgba(94, 234, 212, .12);
+  border-color: rgba(94, 234, 212, .3);
+  color: var(--mint);
+}
+.mode-live .mode-dot {
+  background: var(--mint);
+  box-shadow: 0 0 0 0 rgba(94, 234, 212, .5);
+  animation: pulse 1.6s infinite;
+}
+
+/* Demo — amber, no pulse */
+.mode-demo {
+  background: rgba(255, 194, 107, .10);
+  border-color: rgba(255, 194, 107, .25);
+  color: var(--amber);
+}
+.mode-demo .mode-dot {
+  background: var(--amber);
+}

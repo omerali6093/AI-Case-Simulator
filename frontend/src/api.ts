@@ -188,13 +188,48 @@ const demo = {
     const mine = demoLoad().filter((r) => r.user === demoUser)
     return Promise.resolve(mine.map((r) => ({ patient: r.patient, title: r.title, step: r.step, score: r.score, max: r.max, at: r.at })))
   },
-  chat: (caseId: string, _message: string, history: ChatTurn[]): Promise<{ reply: string }> => {
-    // Offline fallback: cycle through the static Q&A answers by how many turns have happened
+  chat: (caseId: string, message: string, history: ChatTurn[]): Promise<{ reply: string }> => {
+    // Offline fallback when there is no live backend.
+    //
+    // Strategy:
+    //   1. Try to find a Q&A whose prompt shares keywords with the doctor's message.
+    //   2. If nothing matches well, fall back to answering in order (nth question).
+    //   3. Never return the same answer twice — skip already-used ones.
+    //
     const c = DEMO_CASES.find((x) => x.caseId === caseId)
     if (!c) return Promise.resolve({ reply: "I'm not sure about that." })
-    const doctorTurns = history.filter((t) => t.role === 'doctor').length
-    const q = c.questions[doctorTurns] ?? c.questions[c.questions.length - 1]
-    return later({ reply: q?.answer ?? "I'm not sure about that." }, 600)
+
+    // Figure out which Q&As have already been answered in this conversation
+    const usedAnswers = new Set(
+      history
+        .filter((t) => t.role === 'patient')
+        .map((t) => t.text)
+    )
+
+    // Tokenise the doctor's message into lowercase words for matching
+    const questionWords = message.toLowerCase().split(/\W+/).filter(Boolean)
+
+    // Score each Q&A by how many keywords from the doctor's question appear
+    // in the Q&A prompt text
+    const scored = c.questions.map((q, idx) => {
+      const promptWords = q.prompt.toLowerCase().split(/\W+/)
+      const matchCount  = questionWords.filter((w) => promptWords.includes(w)).length
+      return { idx, matchCount, q }
+    })
+
+    // Pick the best-matching, not-yet-used answer
+    const ranked = scored
+      .filter((s) => !usedAnswers.has(s.q.answer))   // skip already-given answers
+      .sort((a, b) => b.matchCount - a.matchCount)    // highest match score first
+
+    // If we found a keyword match, use it; otherwise fall back to the next unused one
+    const doctorTurnCount = history.filter((t) => t.role === 'doctor').length - 1
+    const fallback = c.questions.find((q) => !usedAnswers.has(q.answer))
+               ?? c.questions[doctorTurnCount % c.questions.length]
+
+    const chosen = (ranked[0]?.matchCount ?? 0) > 0 ? ranked[0].q : fallback
+
+    return later({ reply: chosen?.answer ?? "I'm not sure about that." }, 700)
   },
 }
 

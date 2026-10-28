@@ -7,13 +7,14 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "node dev/memory-server.mjs",
+    "dev:mongo": "tsx watch src/index.ts",
+    "dev:memory": "node dev/memory-server.mjs",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "seed": "tsx src/seed/seed.ts",
-    "dev:memory": "node dev/memory-server.mjs",
     "sync:demo": "node scripts/sync-demo-data.mjs"
   },
   "dependencies": {

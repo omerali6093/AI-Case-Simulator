@@ -154,37 +154,67 @@ export default function App() {
 
   const sendQuestion = useCallback(async (text: string) => {
     if (phase !== 'asking' || !currentCase || chatBusy) return
+
+    // Cancellation token — if the user navigates away mid-call we bail out.
     const tok = tokenRef.current
+
+    // ── 1. Optimistic UI: clear the input and lock the tray ─────────────────
     setChatInput('')
     setChatBusy(true)
     setPhase('talking')
+
+    // ── 2. Animate the doctor's speech bubble ──────────────────────────────
     worldRef.current?.setShot('wide')
     await say('doctor', text)
     if (tok !== tokenRef.current) return
-    const nextHistory: ChatTurn[] = [...chatHistory, { role: 'doctor', text }]
-    setChatHistory(nextHistory)
+
+    // Record the doctor's turn in history immediately (before awaiting the AI)
+    const historyWithDoctor: ChatTurn[] = [...chatHistory, { role: 'doctor', text }]
+    setChatHistory(historyWithDoctor)
+
+    // Small pause so the doctor bubble finishes before the patient "thinks"
     await sleep(380)
     if (tok !== tokenRef.current) return
+
+    // ── 3. Camera cuts to the patient while we wait for the AI reply ────────
     worldRef.current?.setShot('patientCU')
 
-    let reply = "I'm not sure about that."
+    // ── 4. Call the AI ──────────────────────────────────────────────────────
+    // We pass historyWithDoctor (which already includes this question) so the
+    // backend receives the complete conversation for context.
+    let reply = ''
+    let aiError = false
+
     try {
-      const res = await clinicAPI.chat(currentCase.id, text, chatHistory)
+      const res = await clinicAPI.chat(currentCase.id, text, historyWithDoctor)
       reply = res.reply
     } catch {
-      // keep the fallback reply; don't crash the flow
+      // Don't crash — let the patient give a graceful "not sure" response.
+      // Show a subtle toast so the doctor knows the AI had a hiccup.
+      aiError = true
+      reply = "I'm sorry, I'm not sure how to answer that."
     }
 
     if (tok !== tokenRef.current) return
+
+    // ── 5. Animate the patient's reply ─────────────────────────────────────
     await say('patient', reply)
     if (tok !== tokenRef.current) return
+
+    // Record the patient's reply in history
     setChatHistory((prev) => [...prev, { role: 'patient', text: reply }])
-    setRevealed((prev) => Math.min(prev + 1, currentCase.qs.length))
+
+    // ── 6. Unlock the tray ──────────────────────────────────────────────────
     await sleep(250)
     if (tok !== tokenRef.current) return
+
     setChatBusy(false)
     setPhase('asking')
-    setStatusMsg(null)
+
+    // Show a non-blocking toast if the AI call failed (so it's obvious to dev)
+    if (aiError) {
+      setToastMsg('AI response failed — showing fallback answer.')
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentCase, chatBusy, chatHistory, say, worldRef])
 

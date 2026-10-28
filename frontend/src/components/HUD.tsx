@@ -1,3 +1,4 @@
+import { clinicAPI } from '../api'
 import type { Progress } from '../types'
 
 interface Props {
@@ -8,10 +9,13 @@ interface Props {
 }
 
 export function HUD({ username, progress, onNotes, onMenu }: Props) {
-  const pts = progress.totalPoints ?? 0
-  const lvl = progress.level ?? 1
+  const pts       = progress.totalPoints ?? 0
+  const lvl       = progress.level ?? 1
   const completed = progress.completed ?? 0
-  const xp = (pts % 250) / 250
+  const xp        = (pts % 250) / 250
+
+  // Show the current API mode so it's always obvious whether AI is live
+  const isLive = clinicAPI.mode() === 'remote'
 
   return (
     <section id="hud">
@@ -30,6 +34,16 @@ export function HUD({ username, progress, onNotes, onMenu }: Props) {
         </div>
 
         <div className="hud-actions">
+          {/* AI mode badge — green when live backend, amber when demo */}
+          <span
+            className={`mode-badge ${isLive ? 'mode-live' : 'mode-demo'}`}
+            title={isLive ? 'Connected to backend — AI responses active' : 'Demo mode — static answers (start the backend for AI)'}
+            aria-label={isLive ? 'AI live' : 'Demo mode'}
+          >
+            <span className="mode-dot" aria-hidden="true" />
+            {isLive ? 'AI Live' : 'Demo'}
+          </span>
+
           <button
             type="button"
             className="glass icon-btn"
@@ -43,6 +57,7 @@ export function HUD({ username, progress, onNotes, onMenu }: Props) {
             </svg>
             Notes
           </button>
+
           <button
             type="button"
             className="glass icon-btn"
