@@ -7,6 +7,7 @@ import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { corsPolicy, generalLimiter, originCheck, securityHeaders } from './middleware/security.js';
 import { authRouter } from './routes/auth.js';
 import { casesRouter } from './routes/cases.js';
+import { chatRouter } from './routes/chat.js';
 import { consultationsRouter } from './routes/consultations.js';
 import { progressRouter } from './routes/progress.js';
 
@@ -31,6 +32,7 @@ export function createApp(config: Config, opts: AppOptions = {}): Express {
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   app.use('/api/auth', authRouter(config, { authMax: opts.authMax }));
   app.use('/api/cases', casesRouter(config));
+  app.use('/api/chat', chatRouter(config));
   app.use('/api/consultations', consultationsRouter(config));
   app.use('/api/progress', progressRouter(config));
   // Unknown /api paths are JSON 404s, never the static site.

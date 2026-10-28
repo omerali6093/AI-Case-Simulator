@@ -3,7 +3,7 @@
  * falls back to the offline demo so the app works without a server.
  * Sessions are httpOnly cookies; no token is ever visible to this script.
  */
-import type { ClinicAPI, ConsultationResult, HistoryRecord, PatientCase, Progress } from './types'
+import type { ChatTurn, ClinicAPI, ConsultationResult, HistoryRecord, PatientCase, Progress } from './types'
 import { DEMO_CASES } from './demoData'
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined ?? '').replace(/\/$/, '')
@@ -109,6 +109,11 @@ const remote = {
           }) as HistoryRecord
       )
     ),
+  chat: (caseId: string, message: string, history: ChatTurn[]) =>
+    request<{ reply: string }>('/api/chat', {
+      method: 'POST',
+      body: { caseId, message, history },
+    }),
 }
 
 // ─── Demo (offline) implementation ───────────────────────────────────────────
@@ -183,6 +188,14 @@ const demo = {
     const mine = demoLoad().filter((r) => r.user === demoUser)
     return Promise.resolve(mine.map((r) => ({ patient: r.patient, title: r.title, step: r.step, score: r.score, max: r.max, at: r.at })))
   },
+  chat: (caseId: string, _message: string, history: ChatTurn[]): Promise<{ reply: string }> => {
+    // Offline fallback: cycle through the static Q&A answers by how many turns have happened
+    const c = DEMO_CASES.find((x) => x.caseId === caseId)
+    if (!c) return Promise.resolve({ reply: "I'm not sure about that." })
+    const doctorTurns = history.filter((t) => t.role === 'doctor').length
+    const q = c.questions[doctorTurns] ?? c.questions[c.questions.length - 1]
+    return later({ reply: q?.answer ?? "I'm not sure about that." }, 600)
+  },
 }
 
 // ─── Public API (with server-detection and ready promise) ─────────────────────
@@ -210,6 +223,7 @@ export const clinicAPI: ClinicAPI = {
   register: (u, p) => ready.then(() => impl.register(u, p)),
   logout: () => ready.then(() => impl.logout()),
   nextCase: () => ready.then(() => impl.nextCase()),
+  chat: (caseId, message, history) => ready.then(() => impl.chat(caseId, message, history)),
   submit: (caseId, stepId, clientId) => ready.then(() => impl.submit(caseId, stepId, clientId)),
   history: () => ready.then(() => impl.history()),
 }

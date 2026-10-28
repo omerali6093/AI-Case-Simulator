@@ -7,3 +7,5 @@ coverage/
 *.log
 .DS_Store
 backend/dev/.dev-data.json
+PHASES.md
+PLAN-AI-DYNAMIC-CONVERSATION.md

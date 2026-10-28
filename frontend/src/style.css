@@ -705,3 +705,206 @@ input[type=range] { width: 100%; accent-color: #5eead4; }
 }
 
 .status.err { color: var(--danger); }
+
+/* ─── Chat input (free-form asking phase) ─────────────────────────────────── */
+
+.chat-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(94, 234, 212, .1);
+  border: 1px solid rgba(94, 234, 212, .22);
+  font: 600 12px/1.2 var(--font-display);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+
+.chat-pill svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  opacity: .8;
+}
+
+.btn-done {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 194, 107, .35);
+  background: rgba(255, 194, 107, .1);
+  color: var(--amber);
+  font: 700 13px/1.2 var(--font-display);
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  white-space: nowrap;
+}
+
+.btn-done svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  transition: transform .15s;
+}
+
+.btn-done:hover {
+  background: rgba(255, 194, 107, .18);
+}
+
+.btn-done:hover svg {
+  transform: translateX(3px);
+}
+
+.btn-done:active {
+  transform: translateY(1px);
+}
+
+/* ── Input wrapper ─────────────────────────────────────────────────────────── */
+
+.chat-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  border-radius: 18px;
+  border: 1.5px solid rgba(94, 234, 212, .3);
+  background: rgba(4, 18, 22, .7);
+  transition: border-color .18s, box-shadow .18s;
+  overflow: hidden;
+}
+
+.chat-input-wrap:focus-within {
+  border-color: var(--mint);
+  box-shadow: 0 0 0 3px rgba(94, 234, 212, .14), 0 8px 28px rgba(0, 0, 0, .35);
+}
+
+.chat-input-wrap.busy {
+  opacity: .65;
+  pointer-events: none;
+}
+
+.chat-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  align-self: stretch;
+  color: var(--mint);
+  opacity: .5;
+  transition: opacity .15s;
+}
+
+.chat-input-wrap:focus-within .chat-icon {
+  opacity: .85;
+}
+
+.chat-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.chat-input {
+  flex: 1;
+  min-height: 52px;
+  max-height: 96px;
+  padding: 14px 8px 14px 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font: 15px/1.5 var(--font-body);
+  resize: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.chat-input::placeholder {
+  color: var(--muted);
+  opacity: .7;
+}
+
+.chat-input:disabled {
+  color: var(--muted);
+}
+
+.chat-send {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  margin: 4px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(94, 234, 212, .12);
+  color: var(--muted);
+  cursor: not-allowed;
+  display: grid;
+  place-items: center;
+  transition: background .15s, color .15s, transform .1s;
+  align-self: flex-end;
+}
+
+.chat-send svg {
+  width: 18px;
+  height: 18px;
+}
+
+.chat-send.ready {
+  background: var(--mint);
+  color: var(--mint-ink);
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(94, 234, 212, .35);
+}
+
+.chat-send.ready:hover {
+  background: #7cf2de;
+  box-shadow: 0 4px 22px rgba(94, 234, 212, .5);
+}
+
+.chat-send.ready:active {
+  transform: scale(.93);
+}
+
+.chat-send:disabled {
+  opacity: 1; /* controlled via color already */
+}
+
+/* ── Spinner inside send button ────────────────────────────────────────────── */
+
+.send-spinner {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(94, 234, 212, .25);
+  border-top-color: var(--mint);
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Keyboard hint ─────────────────────────────────────────────────────────── */
+
+.tray .fine kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .18);
+  font: 11px/1.6 var(--font-body);
+  color: var(--text);
+}

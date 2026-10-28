@@ -103,6 +103,13 @@ export interface WorldAPI {
   info: () => { calls: number; tris: number }
 }
 
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+export interface ChatTurn {
+  role: 'doctor' | 'patient'
+  text: string
+}
+
 // ─── API client interface ─────────────────────────────────────────────────────
 
 export interface ClinicAPI {
@@ -112,6 +119,7 @@ export interface ClinicAPI {
   register: (username: string, password: string) => Promise<{ user: { username: string }; progress: Progress }>
   logout: () => Promise<void>
   nextCase: () => Promise<PatientCase>
+  chat: (caseId: string, message: string, history: ChatTurn[]) => Promise<{ reply: string }>
   submit: (
     caseId: string,
     stepId: string,

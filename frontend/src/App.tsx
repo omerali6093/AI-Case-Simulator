@@ -9,6 +9,7 @@ import { Toast } from './components/Toast'
 import { Tray } from './components/Tray'
 import { useWorld } from './hooks/useWorld'
 import type {
+  ChatTurn,
   ConsultationResult,
   HistoryRecord,
   ModalKind,
@@ -17,7 +18,7 @@ import type {
   Progress,
   WorldAnchors,
 } from './types'
-import { QUESTIONS_PER_CASE, REACTIONS, saveLastUser, uuid } from './utils'
+import { REACTIONS, saveLastUser, uuid } from './utils'
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
@@ -50,7 +51,6 @@ export default function App() {
   const [result, setResult] = useState<ConsultationResult | null>(null)
   const [records, setRecords] = useState<HistoryRecord[]>([])
   const [progress, setProgress] = useState<Progress>({ totalPoints: 0, level: 1, completed: 0 })
-  const [hinted, setHinted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [quality, setQuality] = useState<'high' | 'low'>('high')
   const [exposure, setExposure] = useState(1)
@@ -61,6 +61,11 @@ export default function App() {
   // ── Tray status / error ───────────────────────────────────────────────────
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // ── Chat input ────────────────────────────────────────────────────────────
+  const [chatHistory, setChatHistory] = useState<ChatTurn[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatBusy, setChatBusy] = useState(false)
 
   // ── Toast ─────────────────────────────────────────────────────────────────
   const [toastMsg, setToastMsg] = useState<string | null>(null)
@@ -107,6 +112,9 @@ export default function App() {
     setSelectedStep(null)
     setResult(null)
     setBusy(false)
+    setChatHistory([])
+    setChatInput('')
+    setChatBusy(false)
     attemptRef.current = uuid()
     setModal({ kind: null, dismissible: true })
     world?.resetPatient()
@@ -145,35 +153,47 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCase, say, worldRef])
 
-  const askNext = useCallback(async () => {
-    if (phase !== 'asking' || !currentCase) return
+  const sendQuestion = useCallback(async (text: string) => {
+    if (phase !== 'asking' || !currentCase || chatBusy) return
     const tok = tokenRef.current
-    const q = currentCase.qs[revealed]
+    setChatInput('')
+    setChatBusy(true)
     setPhase('talking')
-    setStatusMsg('Listening…')
     worldRef.current?.setShot('wide')
-    await say('doctor', q.prompt)
+    await say('doctor', text)
     if (tok !== tokenRef.current) return
+    const nextHistory: ChatTurn[] = [...chatHistory, { role: 'doctor', text }]
+    setChatHistory(nextHistory)
     await sleep(380)
     if (tok !== tokenRef.current) return
     worldRef.current?.setShot('patientCU')
-    await say('patient', q.answer)
+
+    let reply = "I'm not sure about that."
+    try {
+      const res = await clinicAPI.chat(currentCase.id, text, chatHistory)
+      reply = res.reply
+    } catch {
+      // keep the fallback reply; don't crash the flow
+    }
+
     if (tok !== tokenRef.current) return
-    const next = revealed + 1
-    setRevealed(next)
-    setHinted(true)
+    await say('patient', reply)
+    if (tok !== tokenRef.current) return
+    setChatHistory((prev) => [...prev, { role: 'patient', text: reply }])
+    setRevealed((prev) => Math.min(prev + 1, currentCase.qs.length))
     await sleep(250)
     if (tok !== tokenRef.current) return
-    if (next >= QUESTIONS_PER_CASE) {
-      setPhase('review')
-      worldRef.current?.setShot('wide')
-      setStatusMsg(null)
-    } else {
-      setPhase('asking')
-      setStatusMsg(null)
-    }
+    setChatBusy(false)
+    setPhase('asking')
+    setStatusMsg(null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, currentCase, revealed, say, worldRef])
+  }, [phase, currentCase, chatBusy, chatHistory, say, worldRef])
+
+  const endQuestioning = useCallback(() => {
+    setPhase('review')
+    worldRef.current?.setShot('wide')
+    setStatusMsg(null)
+  }, [worldRef])
 
   const confirm = useCallback(async () => {
     if (phase !== 'deciding' || !selectedStep || busy || !currentCase) return
@@ -372,10 +392,13 @@ export default function App() {
           <Tray
             phase={phase}
             currentCase={currentCase}
-            revealed={revealed}
             selectedStep={selectedStep}
-            hinted={hinted}
-            onAsk={askNext}
+            chatInput={chatInput}
+            chatBusy={chatBusy}
+            turnCount={chatHistory.filter((t) => t.role === 'doctor').length}
+            onInputChange={setChatInput}
+            onSendQuestion={sendQuestion}
+            onEndQuestioning={endQuestioning}
             onReview={openNotes}
             onSelectStep={(id) => setSelectedStep(id)}
             onConfirm={confirm}

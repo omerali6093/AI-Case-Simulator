@@ -11,6 +11,8 @@ const schema = z.object({
   FRONTEND_DIR: z.string().default('../frontend'),
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+  /** Groq API key for the AI patient chat feature. Optional — omit to disable AI responses. */
+  GROQ_API_KEY: z.string().min(1).optional(),
 });
 
 export type Config = z.infer<typeof schema> & { cookieSecure: boolean };
