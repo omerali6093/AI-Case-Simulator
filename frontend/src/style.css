@@ -908,3 +908,76 @@ input[type=range] { width: 100%; accent-color: #5eead4; }
   font: 11px/1.6 var(--font-body);
   color: var(--text);
 }
+
+/* ─── Consultation transcript (NotesModal chat log) ──────────────────────── */
+
+.chat-log {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-log-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Doctor turns align right, patient turns align left */
+.chat-log-doctor {
+  align-items: flex-end;
+}
+
+.chat-log-patient {
+  align-items: flex-start;
+}
+
+.chat-log-label {
+  font: 700 11px/1 var(--font-display);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  opacity: .65;
+  padding: 0 4px;
+}
+
+.chat-log-doctor .chat-log-label {
+  color: var(--mint);
+}
+
+.chat-log-patient .chat-log-label {
+  color: var(--muted);
+}
+
+.chat-log-text {
+  margin: 0;
+  max-width: 88%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Doctor bubble — teal-tinted glass */
+.chat-log-doctor .chat-log-text {
+  background: rgba(94, 234, 212, .14);
+  border: 1px solid rgba(94, 234, 212, .28);
+  border-bottom-right-radius: 4px;
+  color: var(--text);
+}
+
+/* Patient bubble — warm off-white (mirrors speech bubble style) */
+.chat-log-patient .chat-log-text {
+  background: rgba(255, 253, 247, .08);
+  border: 1px solid rgba(255, 253, 247, .15);
+  border-bottom-left-radius: 4px;
+  color: var(--text);
+}
+
+/* ── Complaint hint pill in Tray ──────────────────────────────────────────── */
+.complaint-hint {
+  font-style: italic;
+  opacity: .9;
+}

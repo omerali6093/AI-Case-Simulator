@@ -146,9 +146,8 @@ export default function App() {
     await sleep(700)
     if (tok !== tokenRef.current) return
     setStatusMsg(null)
-    setPhase('asking')  // trigger tray re-render before say() so bubble is visible
-    await say('patient', 'Hello, doctor. ' + c!.complaint)
-    if (tok !== tokenRef.current) return
+    // Patient sits quietly — doctor speaks first.
+    // The opening complaint is shown as a subtle status hint, not spoken aloud.
     setPhase('asking')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCase, say, worldRef])
@@ -190,9 +189,12 @@ export default function App() {
   }, [phase, currentCase, chatBusy, chatHistory, say, worldRef])
 
   const endQuestioning = useCallback(() => {
+    // Move to review phase and open the notes modal so the doctor
+    // can read the transcript before choosing a next step.
     setPhase('review')
     worldRef.current?.setShot('wide')
     setStatusMsg(null)
+    setModal({ kind: 'notes', dismissible: true })
   }, [worldRef])
 
   const confirm = useCallback(async () => {
@@ -414,7 +416,7 @@ export default function App() {
           kind={modal.kind}
           dismissible={modal.dismissible}
           currentCase={currentCase}
-          revealed={revealed}
+          chatHistory={chatHistory}
           phase={phase}
           result={result}
           records={records}
